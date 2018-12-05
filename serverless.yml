@@ -17,6 +17,9 @@ service: yeld-scraper
 # Check out our docs for more details
 # frameworkVersion: "=X.X.X"
 
+plugins:
+  - serverless-offline-scheduler
+
 provider:
   name: aws
   runtime: nodejs8.10
@@ -24,16 +27,25 @@ provider:
   stage: dev
   environment:
     DYNAMODB_TABLE: yeld-ratings
+    KEY_ID_AWS: TEST //need to change
+    ACCESS_KEY_AWS: TEST //need to change
+    REGION_AWS: us-west-2
   iamRoleStatements:
     - Effect: Allow
       Action:
+        - "lambda:InvokeFunction"
+      Resource: "*"
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
         - dynamodb:Query
         - dynamodb:Scan
         - dynamodb:GetItem
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:752340783843:table/${self:provider.environment.DYNAMODB_TABLE}"
+      Resource: 
+        - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
 package:
   include:
     - utils/**
@@ -70,6 +82,11 @@ package:
 functions:
   scrape:
     handler: handler.scrape
+
+  launch_scrapers:
+    handler: handler.launch_scrapers
+    events: 
+      - schedule: rate(1 minute)
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events

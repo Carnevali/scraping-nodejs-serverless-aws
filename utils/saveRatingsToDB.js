@@ -3,28 +3,46 @@
 const uuid = require('uuid');
 const AWS = require('aws-sdk');
 
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
-
 module.exports = (yeldData, businessName) => {
     const date = JSON.stringify(new Date());
+    
+    const dynamoDb = new AWS.DynamoDB.DocumentClient({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        region: process.env.AWS_DEFAULT_REGION
+    });
+    
     const params = {
-        TableName: process.env.DYNAMODB_TABLE,
         Item: {
-            id: uuid.v1(),
-            businessName: businessName,
-            reviewCount: yeldData.reviewCount,
-            rating: yeldData.rating,
-            scrapedAt: date
-        }
+            id: {
+                S: uuid.v1()
+            },
+            businessName: {
+                S: businessName
+            },
+            reviewCount: {
+                N: yeldData.reviewCount
+            },
+            rating: {
+                N: yeldData.rating
+            },
+            scrapedAt: {
+                S: date
+            }
+        },
+        TableName: process.env.DYNAMODB_TABLE
     };
 
-    dynamoDb.put(params, error => {
+    return dynamoDb.put(params, (error, data) => {
+        console.log(data);
+
         if (error) {
             console.log(`Error saving data DynamoDB ${error}`);
             return Promise.reject(
                 `Error saving data DynamoDB ${JSON.stringify(error)}`  
             );
         } else {
+            console.log(params.Item);
             return Promise.resolve(params.Item);
         } 
     });
